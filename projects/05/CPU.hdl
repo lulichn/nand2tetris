@@ -39,5 +39,55 @@ CHIP CPU {
         pc[15];          // address of next instruction
 
     PARTS:
-    // Put your code here:
+    // Decode
+    Not(in=instruction[15], out=isAinstruction);
+    Not(in=isAinstruction,  out=isCinstruction);
+
+    Mux16(
+        // IN
+        a=false, b=instruction,
+        sel=isCinstruction,
+        // OUT
+        out[3]=writeM,
+        out[12]=isA,                      // comp
+        out[11]=c1,out[10]=c2,out[9]=c3,
+        out[8]=c4, out[7]=c5, out[6]=c6,
+        out[5]=d1, out[4]=d2, out[3]=d3,  // dest
+        out[2]=j1, out[1]=j2, out[0]=j3); // jump
+
+    Mux16(a=ALU, b=instruction, sel=isAinstruction, out=inA);
+    // A Register
+    Or(a=isAinstruction,b=d1,out=loadA);
+    ARegister(in=inA, load=loadA, out=A, out[0..14]=addressM);
+    
+    Mux16( 
+        // comp aが1のときMを
+        a=A, b=inM,
+        sel=isA,
+        out=AorM);
+
+    ALU(// IN
+        x=D, y=AorM,
+        zx=c1, nx=c2, zy=c3, ny=c4, f=c5, no=c6,
+        // OUT
+        out=ALU, out=outM,
+        zr=outZR, ng=outNG);
+
+    // D Register
+    DRegister(in=ALU, load=d2, out=D);   
+
+    // j1 (out < 0)
+    And(a=j1, b=outNG, out=jlt);
+    // j2 (out = 0)
+    And(a=j2, b=outZR, out=jeq);
+    // j3 (out > 0)
+    Or(a=outZR, b=outNG, out=zeroOrNegative);
+    Not(in=zeroOrNegative, out=positive);
+    And(a=j3, b=positive, out=jgt);
+
+    Or(a=jlt, b=jeq, out=jle);
+    Or(a=jle, b=jgt, out=isLoad);
+    Not(in=isLoad, out=isInc);
+
+    PC(in=A, load=isLoad, inc=isInc, reset=reset, out[0..14]=pc);
 }
