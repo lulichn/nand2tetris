@@ -1,0 +1,9 @@
+[package]
+
+name = "assembler"
+version = "0.0.1"
+authors = [ "Daisuke HIGASHI <me@lulichn.net>" ]
+
+[dependencies]
+regex = "1"
+lazy_static = "1"
