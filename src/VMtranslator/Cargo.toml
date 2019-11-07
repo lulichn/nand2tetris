@@ -1,5 +1,5 @@
 [package]
-name = "VMtranslator"
+name = "vm_translator"
 version = "0.1.0"
 authors = ["Daisuke HIGASHI <me@lulichn.net>"]
 edition = "2018"
