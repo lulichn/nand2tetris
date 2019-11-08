@@ -22,15 +22,15 @@ impl Config {
 
 pub fn run(config: Config) -> Result<(), Box<dyn Error>> {
     let in_file = File::open(&config.input)?;
+    let stem = Path::new(&config.input).file_stem().unwrap().to_str().unwrap();
+
     let mut reader = BufReader::new(in_file);
 
-    let lines = analyze(&mut reader)?;
+    let lines = analyze(&mut reader, stem)?;
 
     // out
-    let stem = Path::new(&config.input).file_stem().unwrap().to_str().unwrap();
-    let output = format!("{}{}", stem, ".asm");
-
-    let out_file = File::create(&output)?;
+    let out_file_name = format!("{}{}", stem, ".asm");
+    let out_file = File::create(&out_file_name)?;
     let mut writer = BufWriter::new(out_file);
 
     let mut id = 0;
@@ -45,7 +45,7 @@ pub fn run(config: Config) -> Result<(), Box<dyn Error>> {
     Ok(())
 }
 
-fn analyze(reader: &mut BufReader<File>) -> Result<Vec<Box<dyn Command>>, Box<dyn Error>> {
+fn analyze(reader: &mut BufReader<File>, file: &str) -> Result<Vec<Box<dyn Command>>, Box<dyn Error>> {
     let mut lines: Vec<Box<dyn Command>> = Vec::new();
 
     let mut buf = String::new();
@@ -63,7 +63,7 @@ fn analyze(reader: &mut BufReader<File>) -> Result<Vec<Box<dyn Command>>, Box<dy
         };
 
         let vec: Vec<&str> = line.split_whitespace().collect();
-        let boxed = make_command(vec);
+        let boxed = make_command(vec, file);
         lines.push(boxed);
     }
 
@@ -84,7 +84,7 @@ trait Command {
     fn write(&self, id: i32) -> Vec<String> ;
 }
 
-fn make_command(vec: Vec<&str>) -> Box<dyn Command> {
+fn make_command(vec: Vec<&str>, file: &str) -> Box<dyn Command> {
     match vec[0] {
         "add"  => Box::new(CArithmeticAdd),
         "sub"  => Box::new(CArithmeticSub),
@@ -95,13 +95,14 @@ fn make_command(vec: Vec<&str>) -> Box<dyn Command> {
         "and"  => Box::new(CArithmeticAnd),
         "or"   => Box::new(CArithmeticOr),
         "not"  => Box::new(CArithmeticNot),
-        "push" => Box::new(CPush { arg1: vec[1].to_string(), arg2: vec[2].to_string() }),
-        "pop"  => Box::new(CPop { arg1: vec[1].to_string(), arg2: vec[2].to_string() }),
+        "push" => Box::new(CPush { file: file.to_string(), arg1: vec[1].to_string(), arg2: vec[2].to_string() }),
+        "pop"  => Box::new(CPop { file: file.to_string(), arg1: vec[1].to_string(), arg2: vec[2].to_string() }),
         _ => unreachable!()
     }
 }
 
 struct CPush {
+    file: String,
     arg1: String,
     arg2: String,
 }
@@ -131,6 +132,8 @@ impl Command for CPush {
                 String::from("D=M"),
             ],
             "static" => vec![
+                format!("@{}.{}", self.file, self.arg2),
+                String::from("D=M"),
             ],
             _ => unimplemented!()
         };
@@ -151,6 +154,7 @@ impl Command for CPush {
 }
 
 struct CPop {
+    file: String,
     arg1: String,
     arg2: String,
 }
@@ -197,6 +201,12 @@ impl Command for CPop {
                 String::from("M=D"),
             ],
             "static" => vec![
+                String::from("@SP"),
+                String::from("AM=M-1"),
+                String::from("D=M"),
+
+                format!("@{}.{}", self.file, self.arg2),
+                String::from("M=D"),
             ],
             _ => unimplemented!()
         };
