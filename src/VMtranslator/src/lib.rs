@@ -1,6 +1,6 @@
 use std::error::Error;
-use std::io::{BufReader, BufRead, BufWriter, Write};
 use std::fs::File;
+use std::io::{BufRead, BufReader, BufWriter, Write};
 use std::path::Path;
 
 pub struct Config {
@@ -75,16 +75,17 @@ trait Command {
 
 fn make_command(vec: Vec<&str>) -> Box<dyn Command> {
     match vec[0] {
-        "add" => Box::new(CArithmeticAdd),
-        "sub" => Box::new(CArithmeticSub),
-        "neg" => Box::new(CArithmeticNeg),
-        "eq" => Box::new(CArithmeticEq),
-        "gt" => Box::new(CArithmeticGt),
-        "lt" => Box::new(CArithmeticLt),
-        "and" => Box::new(CArithmeticAnd),
-        "or" => Box::new(CArithmeticOr),
-        "not" => Box::new(CArithmeticNot),
+        "add"  => Box::new(CArithmeticAdd),
+        "sub"  => Box::new(CArithmeticSub),
+        "neg"  => Box::new(CArithmeticNeg),
+        "eq"   => Box::new(CArithmeticEq),
+        "gt"   => Box::new(CArithmeticGt),
+        "lt"   => Box::new(CArithmeticLt),
+        "and"  => Box::new(CArithmeticAnd),
+        "or"   => Box::new(CArithmeticOr),
+        "not"  => Box::new(CArithmeticNot),
         "push" => Box::new(CPush { arg1: vec[1].to_string(), arg2: vec[2].to_string() }),
+        "pop"  => Box::new(CPop { arg1: vec[1].to_string(), arg2: vec[2].to_string() }),
         _ => unreachable!()
     }
 }
@@ -93,11 +94,10 @@ struct CPush {
     arg1: String,
     arg2: String,
 }
-
 impl Command for CPush {
-    fn write(&self, id: i32) -> Vec<String> {
+    fn write(&self, _: i32) -> Vec<String> {
         let vec = [
-            format!("// push constant {}", self.arg2),
+            format!("// push {} {}", self.arg1, self.arg2),
             format!("@{}", self.arg2),
             String::from("D=A"),
             String::from("@SP"),
@@ -111,9 +111,23 @@ impl Command for CPush {
     }
 }
 
+struct CPop {
+    arg1: String,
+    arg2: String,
+}
+impl Command for CPop {
+    fn write(&self, _: i32) -> Vec<String> {
+        let vec = [
+            format!("// pop {} {}", self.arg1, self.arg2)
+        ];
+        println!("{:?}", vec);
+        return vec.to_vec();
+    }
+}
+
 struct CArithmeticAdd;
 impl Command for CArithmeticAdd {
-    fn write(&self, id: i32) -> Vec<String> {
+    fn write(&self, _: i32) -> Vec<String> {
         let vec = [
             String::from("// add"),
 
@@ -123,11 +137,7 @@ impl Command for CArithmeticAdd {
 
             String::from("@SP"),
             String::from("AM=M-1"),
-            String::from("D=M+D"),
-
-            String::from("@SP"),
-            String::from("A=M"),
-            String::from("M=D"),
+            String::from("M=M+D"),
 
             String::from("@SP"),
             String::from("M=M+1")
@@ -139,7 +149,7 @@ impl Command for CArithmeticAdd {
 
 struct CArithmeticSub;
 impl Command for CArithmeticSub {
-    fn write(&self, id: i32) -> Vec<String> {
+    fn write(&self, _: i32) -> Vec<String> {
         let vec = [
             String::from("// sub"),
 
@@ -149,11 +159,7 @@ impl Command for CArithmeticSub {
 
             String::from("@SP"),
             String::from("AM=M-1"),
-            String::from("D=M-D"),
-
-            String::from("@SP"),
-            String::from("A=M"),
-            String::from("M=D"),
+            String::from("M=M-D"),
 
             String::from("@SP"),
             String::from("M=M+1")
@@ -165,7 +171,7 @@ impl Command for CArithmeticSub {
 
 struct CArithmeticNeg;
 impl Command for CArithmeticNeg {
-    fn write(&self, id: i32) -> Vec<String> {
+    fn write(&self, _: i32) -> Vec<String> {
         let vec = [
             String::from("// neg"),
 
@@ -297,7 +303,7 @@ impl Command for CArithmeticLt {
 
 struct CArithmeticAnd;
 impl Command for CArithmeticAnd {
-    fn write(&self, id: i32) -> Vec<String> {
+    fn write(&self, _: i32) -> Vec<String> {
         let vec = [
             String::from("// and"),
 
@@ -307,11 +313,7 @@ impl Command for CArithmeticAnd {
 
             String::from("@SP"),
             String::from("AM=M-1"),
-            String::from("D=M&D"),
-
-            String::from("@SP"),
-            String::from("A=M"),
-            String::from("M=D"),
+            String::from("M=M&D"),
 
             String::from("@SP"),
             String::from("M=M+1")
@@ -323,7 +325,7 @@ impl Command for CArithmeticAnd {
 
 struct CArithmeticOr;
 impl Command for CArithmeticOr {
-    fn write(&self, id: i32) -> Vec<String> {
+    fn write(&self, _: i32) -> Vec<String> {
         let vec = [
             String::from("// or"),
 
@@ -333,11 +335,7 @@ impl Command for CArithmeticOr {
 
             String::from("@SP"),
             String::from("AM=M-1"),
-            String::from("D=M|D"),
-
-            String::from("@SP"),
-            String::from("A=M"),
-            String::from("M=D"),
+            String::from("M=M|D"),
 
             String::from("@SP"),
             String::from("M=M+1")
@@ -349,7 +347,7 @@ impl Command for CArithmeticOr {
 
 struct CArithmeticNot;
 impl Command for CArithmeticNot {
-    fn write(&self, id: i32) -> Vec<String> {
+    fn write(&self, _: i32) -> Vec<String> {
         let vec = [
             String::from("// not"),
 
@@ -363,18 +361,4 @@ impl Command for CArithmeticNot {
         println!("{:?}", vec);
         return vec.to_vec();
     }
-}
-
-#[derive(Debug)]
-pub enum CommandType {
-    CArithmetic {arg1: String},
-    CPush {arg1: String, arg2: String},
-    CPop {arg1: String, arg2: String},
-    CLabel {arg1: String},
-    CGoto {arg1: String},
-    CIf {arg1: String},
-    CFunction {arg1: String, arg2: String},
-    CReturn {arg1: String},
-    CCall {arg1: String, arg2: String},
-    Err,
 }
