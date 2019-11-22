@@ -3,12 +3,14 @@ use crate::command::comparison::*;
 use crate::command::logical::*;
 use crate::command::stack::*;
 use crate::command::program_flow::*;
+use crate::command::function_calls::*;
 
 mod stack;
 mod arithmetic;
 mod logical;
 mod comparison;
 mod program_flow;
+mod function_calls;
 
 pub trait Command {
     fn write(&self) -> Vec<String> ;
@@ -31,6 +33,9 @@ pub fn make_command(file: &str, id: i32, tokens: Vec<&str>) -> Box<dyn Command> 
         "label"   => Box::new(Label { file: file.to_string(), arg1: tokens[1].to_string() }),
         "goto"    => Box::new(Goto { file: file.to_string(), arg1: tokens[1].to_string() }),
         "if-goto" => Box::new(IfGoto { file: file.to_string(), arg1: tokens[1].to_string() }),
+        "function" => Box::new(Function { file: file.to_string(), arg1: tokens[1].to_string(), arg2: tokens[2].to_string() }),
+        "call"     => Box::new(Call { file: file.to_string(), arg1: tokens[1].to_string(), arg2: tokens[2].to_string() }),
+        "return"   => Box::new(Return { file: file.to_string() }),
         _ => unreachable!()
     }
 }
