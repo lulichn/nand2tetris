@@ -123,7 +123,7 @@ pub fn base_address(str_value: &str) -> &str {
         "local"    => "@LCL",
         "argument" => "@ARG",
         "this"     => "@THIS",
-        "that"    => "@THAT",
+        "that"     => "@THAT",
         _ => unreachable!()
     }
 }
