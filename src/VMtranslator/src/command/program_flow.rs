@@ -6,11 +6,9 @@ pub(crate) struct CLabel {
 }
 impl Command for CLabel {
     fn write(&self) -> Vec<String> {
-        let vec = [
-            format!("({}${})", self.file, self.arg1)
-        ];
-
-        return vec.to_vec();
+        vec![
+            format!("({}${})", self.file, self.arg1),
+        ]
     }
 }
 
@@ -20,13 +18,11 @@ pub(crate) struct CGoto {
 }
 impl Command for CGoto {
     fn write(&self) -> Vec<String> {
-        let vec = [
+        vec![
             // Pop
             format!("@{}${}", self.file, self.arg1),
             String::from("0;JMP"),
-        ];
-
-        return vec.to_vec();
+        ]
     }
 }
 
@@ -36,7 +32,7 @@ pub(crate) struct CIfGoto {
 }
 impl Command for CIfGoto {
     fn write(&self) -> Vec<String> {
-        let vec = [
+        vec![
             // Pop
             String::from("@SP"),
             String::from("AM=M-1"),
@@ -44,8 +40,6 @@ impl Command for CIfGoto {
 
             format!("@{}${}", self.file, self.arg1),
             String::from("D;JNE"),
-        ];
-
-        return vec.to_vec();
+        ]
     }
 }

@@ -13,7 +13,7 @@ mod program_flow;
 mod function_calls;
 
 pub trait Command {
-    fn write(&self) -> Vec<String> ;
+    fn write(&self) -> Vec<String>;
 }
 
 pub fn make_command(file: &str, id: i32, tokens: Vec<&str>) -> Box<dyn Command> {
@@ -36,7 +36,7 @@ pub fn make_command(file: &str, id: i32, tokens: Vec<&str>) -> Box<dyn Command> 
         "function" => Box::new(CFunction { arg1: tokens[1].to_string(), arg2: tokens[2].to_string() }),
         "call"     => Box::new(CCall { file: file.to_string(), arg1: tokens[1].to_string(), arg2: tokens[2].to_string(), id }),
         "return"   => Box::new(CReturn),
-        _ => unreachable!()
+        _ => unreachable!(),
     }
 }
 

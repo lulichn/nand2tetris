@@ -49,7 +49,7 @@ pub fn run(config: Config) -> Result<(), Box<dyn Error>> {
     Ok(())
 }
 
-fn list_files(path: &Path) -> Result<Vec<PathBuf>, Box<dyn Error>>{
+fn list_files(path: &Path) -> Result<Vec<PathBuf>, Box<dyn Error>> {
     let files = path.read_dir()?;
     let vm_paths = files.filter_map(Result::ok)
         .filter(|f: &DirEntry| f.path().extension() == Some(OsStr::new("vm")))

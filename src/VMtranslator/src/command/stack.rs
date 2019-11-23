@@ -34,7 +34,7 @@ impl Command for CPush {
                 format!("@{}.{}", self.file, self.arg2),
                 String::from("D=M"),
             ],
-            _ => unimplemented!()
+            _ => unimplemented!(),
         };
 
         vec.append(&mut add);
@@ -44,11 +44,10 @@ impl Command for CPush {
             String::from("A=M"),
             String::from("M=D"),
             String::from("@SP"),
-            String::from("M=M+1")
+            String::from("M=M+1"),
         ]);
 
-
-        return vec;
+        vec
     }
 }
 
@@ -108,13 +107,12 @@ impl Command for CPop {
                 format!("@{}.{}", self.file, self.arg2),
                 String::from("M=D"),
             ],
-            _ => unimplemented!()
+            _ => unimplemented!(),
         };
 
         vec.append(&mut add);
 
-
-        return vec.to_vec();
+        vec
     }
 }
 
@@ -124,6 +122,6 @@ pub fn base_address(str_value: &str) -> &str {
         "argument" => "@ARG",
         "this"     => "@THIS",
         "that"     => "@THAT",
-        _ => unreachable!()
+        _ => unreachable!(),
     }
 }

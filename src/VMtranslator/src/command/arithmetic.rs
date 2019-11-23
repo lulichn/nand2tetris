@@ -3,7 +3,7 @@ use crate::command::Command;
 pub(crate) struct CArithmeticAdd;
 impl Command for CArithmeticAdd {
     fn write(&self) -> Vec<String> {
-        let vec = [
+        vec![
             String::from("// add"),
 
             String::from("@SP"),
@@ -15,17 +15,15 @@ impl Command for CArithmeticAdd {
             String::from("M=M+D"),
 
             String::from("@SP"),
-            String::from("M=M+1")
-        ];
-
-        return vec.to_vec();
+            String::from("M=M+1"),
+        ]
     }
 }
 
 pub(crate) struct CArithmeticSub;
 impl Command for CArithmeticSub {
     fn write(&self) -> Vec<String> {
-        let vec = [
+        vec![
             String::from("// sub"),
 
             String::from("@SP"),
@@ -37,17 +35,15 @@ impl Command for CArithmeticSub {
             String::from("M=M-D"),
 
             String::from("@SP"),
-            String::from("M=M+1")
-        ];
-
-        return vec.to_vec();
+            String::from("M=M+1"),
+        ]
     }
 }
 
 pub(crate) struct CArithmeticNeg;
 impl Command for CArithmeticNeg {
     fn write(&self) -> Vec<String> {
-        let vec = [
+        vec![
             String::from("// neg"),
 
             String::from("@SP"),
@@ -55,9 +51,7 @@ impl Command for CArithmeticNeg {
             String::from("M=-M"),
 
             String::from("@SP"),
-            String::from("M=M+1")
-        ];
-
-        return vec.to_vec();
+            String::from("M=M+1"),
+        ]
     }
 }

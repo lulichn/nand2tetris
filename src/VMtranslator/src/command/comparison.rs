@@ -30,7 +30,7 @@ pub(crate) struct CArithmeticComparison {
 }
 impl Command for CArithmeticComparison {
     fn write(&self) -> Vec<String> {
-        let vec = [
+        vec![
             String::from("@SP"),
             String::from("AM=M-1"),
             String::from("D=M"),
@@ -56,9 +56,7 @@ impl Command for CArithmeticComparison {
 
             format!("({}_END_{})", self.t.as_str(), self.id),
             String::from("@SP"),
-            String::from("M=M+1")
-        ];
-
-        return vec.to_vec();
+            String::from("M=M+1"),
+        ]
     }
 }

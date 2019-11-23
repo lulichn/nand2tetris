@@ -28,7 +28,7 @@ pub(crate) struct CCall {
 }
 impl Command for CCall {
     fn write(&self) -> Vec<String> {
-        let vec = [
+        vec![
             format!("// call {} {}", self.arg1, self.arg2),
 
             // push return-address
@@ -96,9 +96,7 @@ impl Command for CCall {
 
             // return-address
             format!("({}_{})", self.file, self.id),
-        ];
-
-        return vec.to_vec();
+        ]
     }
 }
 
@@ -112,7 +110,7 @@ impl Command for CFunction {
 
         vec.append(&mut vec![
             format!("// function {} {}", self.arg1.as_str(), self.arg2.as_str()),
-            format!("({})", self.arg1.as_str())
+            format!("({})", self.arg1.as_str()),
         ]);
 
         let k = self.arg2.parse::<i32>().unwrap();
@@ -126,14 +124,14 @@ impl Command for CFunction {
             ]);
         }
 
-        return vec.to_vec();
+        vec
     }
 }
 
 pub(crate) struct CReturn;
 impl Command for CReturn {
     fn write(&self) -> Vec<String> {
-        let vec = [
+        vec![
             String::from("// return"),
 
             // FRAME: Address
@@ -201,8 +199,6 @@ impl Command for CReturn {
             String::from("@R14"),
             String::from("A=M"),
             String::from("0;JMP"),
-        ];
-
-        return vec.to_vec();
+        ]
     }
 }
