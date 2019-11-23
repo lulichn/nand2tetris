@@ -1,28 +1,28 @@
 use crate::command::Command;
 
-pub(crate) struct Label {
+pub(crate) struct CLabel {
     pub(crate) file: String,
     pub(crate) arg1: String,
 }
-impl Command for Label {
+impl Command for CLabel {
     fn write(&self) -> Vec<String> {
         let vec = [
-            format!("({})", self.arg1.as_str())
+            format!("({}${})", self.file, self.arg1)
         ];
 
         return vec.to_vec();
     }
 }
 
-pub(crate) struct Goto {
+pub(crate) struct CGoto {
     pub(crate) file: String,
     pub(crate) arg1: String,
 }
-impl Command for Goto {
+impl Command for CGoto {
     fn write(&self) -> Vec<String> {
         let vec = [
             // Pop
-            format!("@{}", self.arg1.as_str()),
+            format!("@{}${}", self.file, self.arg1),
             String::from("0;JMP"),
         ];
 
@@ -30,11 +30,11 @@ impl Command for Goto {
     }
 }
 
-pub(crate) struct IfGoto {
+pub(crate) struct CIfGoto {
     pub(crate) file: String,
     pub(crate) arg1: String,
 }
-impl Command for IfGoto {
+impl Command for CIfGoto {
     fn write(&self) -> Vec<String> {
         let vec = [
             // Pop
@@ -42,7 +42,7 @@ impl Command for IfGoto {
             String::from("AM=M-1"),
             String::from("D=M"),
 
-            format!("@{}", self.arg1.as_str()),
+            format!("@{}${}", self.file, self.arg1),
             String::from("D;JNE"),
         ];
 

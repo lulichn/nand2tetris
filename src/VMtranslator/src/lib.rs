@@ -1,7 +1,8 @@
 use std::error::Error;
-use std::fs::File;
+use std::ffi::OsStr;
+use std::fs::{DirEntry, File};
 use std::io::{BufRead, BufReader, BufWriter, Write};
-use std::path::Path;
+use std::path::{Path, PathBuf};
 
 use crate::command::Command;
 
@@ -22,29 +23,48 @@ impl Config {
 }
 
 pub fn run(config: Config) -> Result<(), Box<dyn Error>> {
-    let in_file = File::open(&config.input)?;
-    let file_name = Path::new(&config.input).file_stem().unwrap().to_str().unwrap();
+    let in_path = Path::new(&config.input);
 
-    let mut reader = BufReader::new(in_file);
+    if in_path.is_dir() {
+        let files = list_files(in_path)?;
 
-    let lines = translate(file_name, &mut reader)?;
-
-    // out
-    let out_file_name = format!("{}{}", file_name, ".asm");
-    let out_file = File::create(&out_file_name)?;
-    let mut writer = BufWriter::new(out_file);
-
-    for line in lines {
-        let codes = line.write();
-        for code in codes {
-            writer.write(format!("{}\n", code).as_bytes()).unwrap();
+        let mut lines: Vec<Box<dyn Command>> = Vec::new();
+        lines.push(command::bootstrap());
+        for file in files {
+            lines.append(&mut read_file(&file)?);
         }
+
+        // out
+        let file_name = in_path.dir_name()?;
+        write(file_name, lines)?;
+    } else {
+        let lines = read_file(in_path)?;
+
+        // out
+        let file_name = in_path.file_stem().unwrap().to_str().unwrap().to_string();
+        write(file_name, lines)?;
     }
+
 
     Ok(())
 }
 
-fn translate(file: &str, reader: &mut BufReader<File>) -> Result<Vec<Box<dyn Command>>, Box<dyn Error>> {
+fn list_files(path: &Path) -> Result<Vec<PathBuf>, Box<dyn Error>>{
+    let files = path.read_dir()?;
+    let vm_paths = files.filter_map(Result::ok)
+        .filter(|f: &DirEntry| f.path().extension() == Some(OsStr::new("vm")))
+        .map(|x| x.path())
+        .collect();
+
+    Ok(vm_paths)
+}
+
+fn read_file(path: &Path) -> Result<Vec<Box<dyn Command>>, Box<dyn Error>> {
+    let file_name = path.file_stem().unwrap().to_str().unwrap();
+
+    let file = File::open(path)?;
+    let mut reader = BufReader::new(file);
+
     let mut lines: Vec<Box<dyn Command>> = Vec::new();
     let mut id = 0;
 
@@ -63,10 +83,35 @@ fn translate(file: &str, reader: &mut BufReader<File>) -> Result<Vec<Box<dyn Com
         };
 
         let tokens: Vec<&str> = line.split_whitespace().collect();
-        let boxed = command::make_command(file, id, tokens);
+        let boxed = command::make_command(file_name, id, tokens);
         lines.push(boxed);
         id += 1;
     }
 
-    return Ok(lines);
+    Ok(lines)
+}
+
+fn write(file_name: String, lines: Vec<Box<dyn Command>>) -> Result<(), Box<dyn Error>> {
+    let path = Path::new(&file_name).with_extension("asm");
+    let out_file = File::create(path)?;
+    let mut writer = BufWriter::new(out_file);
+
+    for line in lines {
+        let codes = line.write();
+        for code in codes {
+            writer.write(format!("{}\n", code).as_bytes()).unwrap();
+        }
+    }
+
+    Ok(())
+}
+
+pub trait PathMixin {
+    fn dir_name(&self) -> Result<String, Box<dyn Error>>;
+}
+
+impl PathMixin for Path {
+    fn dir_name(&self) -> Result<String, Box<dyn Error>> {
+        Ok(self.canonicalize()?.file_name().unwrap().to_str().unwrap().to_string())
+    }
 }

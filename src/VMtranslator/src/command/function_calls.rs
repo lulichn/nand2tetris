@@ -1,11 +1,112 @@
 use crate::command::Command;
 
-pub(crate) struct Function {
+pub(crate) struct Bootstrap;
+impl Command for Bootstrap {
+    fn write(&self) -> Vec<String> {
+        let mut vec: Vec<String> = Vec::new();
+
+        vec.append(&mut vec![
+            String::from("// bootstrap"),
+            String::from("@256"),
+            String::from("D=A"),
+            String::from("@SP"),
+            String::from("M=D"),
+        ]);
+
+        let call = CCall { file: String::from("bootstrap"), arg1: String::from("Sys.init"), arg2: String::from("0"), id: 0 };
+        vec.append(&mut call.write());
+
+        vec
+    }
+}
+
+pub(crate) struct CCall {
     pub(crate) file: String,
     pub(crate) arg1: String,
     pub(crate) arg2: String,
+    pub(crate) id: i32,
 }
-impl Command for Function {
+impl Command for CCall {
+    fn write(&self) -> Vec<String> {
+        let vec = [
+            format!("// call {} {}", self.arg1, self.arg2),
+
+            // push return-address
+            format!("@{}_{}", self.file, self.id),
+            String::from("D=A"),
+            String::from("@SP"),
+            String::from("A=M"),
+            String::from("M=D"),
+            String::from("@SP"),
+            String::from("M=M+1"),
+
+            // push LCL
+            String::from("@LCL"),
+            String::from("D=M"),
+            String::from("@SP"),
+            String::from("A=M"),
+            String::from("M=D"),
+            String::from("@SP"),
+            String::from("M=M+1"),
+
+            // push ARG
+            String::from("@ARG"),
+            String::from("D=M"),
+            String::from("@SP"),
+            String::from("A=M"),
+            String::from("M=D"),
+            String::from("@SP"),
+            String::from("M=M+1"),
+
+            // push THIS
+            String::from("@THIS"),
+            String::from("D=M"),
+            String::from("@SP"),
+            String::from("A=M"),
+            String::from("M=D"),
+            String::from("@SP"),
+            String::from("M=M+1"),
+
+            // push THAT
+            String::from("@THAT"),
+            String::from("D=M"),
+            String::from("@SP"),
+            String::from("A=M"),
+            String::from("M=D"),
+            String::from("@SP"),
+            String::from("M=M+1"),
+
+            // ARG = SP - n - 5
+            String::from("@SP"),
+            String::from("D=M"),
+            format!("@{}", 5 + self.arg2.parse::<i32>().unwrap()),
+            String::from("D=D-A"),
+            String::from("@ARG"),
+            String::from("M=D"),
+
+            // LCL = SP
+            String::from("@SP"),
+            String::from("D=M"),
+            String::from("@LCL"),
+            String::from("M=D"),
+
+            // goto f
+            format!("@{}", self.arg1.as_str()),
+            String::from("0;JMP"),
+
+            // return-address
+            format!("({}_{})", self.file, self.id),
+        ];
+
+        return vec.to_vec();
+    }
+}
+
+pub(crate) struct CFunction {
+    pub(crate) arg1: String,
+    pub(crate) arg2: String,
+}
+impl Command for CFunction {
     fn write(&self) -> Vec<String> {
         let mut vec: Vec<String> = Vec::new();
 
@@ -15,7 +116,7 @@ impl Command for Function {
         ]);
 
         let k = self.arg2.parse::<i32>().unwrap();
-        for x in 0..k {
+        for _ in 0..k {
             vec.append(&mut vec![
                 String::from("@SP"),
                 String::from("A=M"),
@@ -29,25 +130,8 @@ impl Command for Function {
     }
 }
 
-pub(crate) struct Call {
-    pub(crate) file: String,
-    pub(crate) arg1: String,
-    pub(crate) arg2: String,
-}
-impl Command for Call {
-    fn write(&self) -> Vec<String> {
-        let vec = [
-            format!("({})", self.arg1.as_str())
-        ];
-
-        return vec.to_vec();
-    }
-}
-
-pub(crate) struct Return {
-    pub(crate) file: String,
-}
-impl Command for Return {
+pub(crate) struct CReturn;
+impl Command for CReturn {
     fn write(&self) -> Vec<String> {
         let vec = [
             String::from("// return"),
