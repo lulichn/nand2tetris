@@ -18,11 +18,11 @@ fn symbol(c: &char) -> bool {
     SYMBOLS.contains(c)
 }
 
-pub fn read_file(input: &String) -> Result<Vec<Box<dyn Token>>, Box<dyn Error>> {
+pub fn read_file(input: &String) -> Result<Vec<Tokens>, Box<dyn Error>> {
     let mut reader = Reader::new(input);
     let mut stack = Stack::new();
 
-    let mut tokens: Vec<Box<dyn Token>> = Vec::new();
+    let mut tokens: Vec<Tokens> = Vec::new();
 
     loop {
         match reader.read(2) {
@@ -44,7 +44,7 @@ pub fn read_file(input: &String) -> Result<Vec<Box<dyn Token>>, Box<dyn Error>> 
                 }
 
                 if symbol(c) {
-                    tokens.push(Box::new(Symbol { value: *c }));
+                    tokens.push(Tokens::Symbol(*c));
                 }
             },
             Some(c) if *c == '"' => {
@@ -53,7 +53,7 @@ pub fn read_file(input: &String) -> Result<Vec<Box<dyn Token>>, Box<dyn Error>> 
                     if *c == '"' { break }
                     w.push(c.clone());
                 }
-                tokens.push(Box::new(StringConstant { value: w.iter().cloned().collect::<String>() }));
+                tokens.push(Tokens::StringConstant(w.iter().cloned().collect::<String>()));
             },
             Some(c) => {
                 stack.push(*c);
@@ -157,20 +157,20 @@ impl Stack {
         self.work.len() == 0
     }
 
-    fn to_token(&self) -> Box<dyn Token> {
+    fn to_token(&self) -> Tokens {
         if self.is_keyword() {
-            return Box::new(Keyword { value: self.to_string() });
+            return Tokens::Keyword(self.to_string());
         }
 
         if self.is_symbol() {
-            return Box::new(Symbol { value: *self.work.get(0).unwrap() });
+            return Tokens::Symbol(*self.work.get(0).unwrap());
         }
 
         if self.is_integer_constant() {
-            return Box::new(IntegerConstant { value: self.to_i() } )
+            return Tokens::IntegerConstant(self.to_i())
         }
 
-        return Box::new(Identifier { value: self.to_string() })
+        return Tokens::Identifier(self.to_string())
     }
 
     fn to_string(&self) -> String {
@@ -203,103 +203,28 @@ impl Stack {
 /**
  *
  */
-pub trait Token {
-    fn xml_node(&self) -> String;
-    fn box_clone(&self) -> Box<dyn Token>;
-}
-
-impl Clone for Box<dyn Token>  {
-    fn clone(&self) -> Box<dyn Token> {
-        self.box_clone()
-    }
-}
-
-/**
- *
- */
 #[derive(Clone)]
-pub struct Keyword {
-    value: String
-}
-impl Token for Keyword {
-    fn xml_node(&self) -> String {
-        format!("<keyword> {} </keyword>", self.value)
-    }
-
-    fn box_clone(&self) -> Box<dyn Token> {
-        Box::new((*self).clone())
-    }
+pub enum Tokens {
+    Keyword(String),
+    Identifier(String),
+    StringConstant(String),
+    IntegerConstant(i32),
+    Symbol(char),
 }
 
-/**
- *
- */
-#[derive(Clone)]
-pub struct Identifier {
-    value: String
-}
-impl Token for Identifier {
-    fn xml_node(&self) -> String {
-        format!("<identifier> {} </identifier>", self.value)
-    }
-
-    fn box_clone(&self) -> Box<dyn Token> {
-        Box::new((*self).clone())
-    }
-}
-
-/**
- *
- */
-#[derive(Clone)]
-pub struct StringConstant {
-    value: String
-}
-impl Token for StringConstant {
-    fn xml_node(&self) -> String {
-        format!("<stringConstant> {} </stringConstant>", self.value)
-    }
-
-    fn box_clone(&self) -> Box<dyn Token> {
-        Box::new((*self).clone())
-    }
-}
-
-/**
- *
- */
-#[derive(Clone)]
-pub struct IntegerConstant {
-    value: i32
-}
-impl Token for IntegerConstant {
-    fn xml_node(&self) -> String {
-        format!("<integerConstant> {} </integerConstant>", self.value)
-    }
-
-    fn box_clone(&self) -> Box<dyn Token> {
-        Box::new((*self).clone())
-    }
-}
-
-/**
- *
- */
-#[derive(Clone)]
-pub struct Symbol {
-    value: char
-}
-impl Token for Symbol {
-    fn xml_node(&self) -> String {
-        match self.value {
-            '<' => format!("<symbol> &lt; </symbol>"),
-            '>' => format!("<symbol> &gt; </symbol>"),
-            '&' => format!("<symbol> &amp; </symbol>"),
-            c => format!("<symbol> {} </symbol>", c),
+impl Tokens {
+    pub fn xml_node(&self) -> String {
+        match self {
+            Tokens::Keyword(v) => format!("<keyword> {} </keyword>", v),
+            Tokens::Identifier(v) => format!("<identifier> {} </identifier>", v),
+            Tokens::StringConstant(v) => format!("<stringConstant> {} </stringConstant>", v),
+            Tokens::IntegerConstant(v) => format!("<integerConstant> {} </integerConstant>", v),
+            Tokens::Symbol(v) => match v {
+                '<' => format!("<symbol> &lt; </symbol>"),
+                '>' => format!("<symbol> &gt; </symbol>"),
+                '&' => format!("<symbol> &amp; </symbol>"),
+                c => format!("<symbol> {} </symbol>", c),
+            },
         }
-    }
-
-    fn box_clone(&self) -> Box<dyn Token> {
-        Box::new((*self).clone())
     }
 }

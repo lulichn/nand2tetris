@@ -4,7 +4,7 @@ use std::fs::{DirEntry, File};
 use std::io::{BufReader, BufWriter, Read, Write};
 use std::path::{Path, PathBuf};
 
-use crate::token::Token;
+use crate::token::{Tokens};
 use crate::parser::Parser;
 
 pub mod token;
@@ -57,7 +57,7 @@ fn list_files(path: &Path) -> Result<Vec<PathBuf>, Box<dyn Error>> {
     Ok(vm_paths)
 }
 
-fn read_file(path: &Path) -> Result<Vec<Box<dyn Token>>, Box<dyn Error>> {
+fn read_file(path: &Path) -> Result<Vec<Tokens>, Box<dyn Error>> {
 //    let file_name = path.file_stem().unwrap().to_str().unwrap();
     let file = File::open(path)?;
     let mut reader = BufReader::new(file);
@@ -70,7 +70,7 @@ fn read_file(path: &Path) -> Result<Vec<Box<dyn Token>>, Box<dyn Error>> {
     Ok(tokens)
 }
 
-fn write_tokens(file_name: String, tokens: &Vec<Box<dyn Token>>) -> Result<(), Box<dyn Error>> {
+fn write_tokens(file_name: String, tokens: &Vec<Tokens>) -> Result<(), Box<dyn Error>> {
     let path = Path::new(&file_name).with_extension("xml");
     let out_file = File::create(path)?;
     let mut writer = BufWriter::new(out_file);
