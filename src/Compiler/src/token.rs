@@ -263,6 +263,7 @@ impl Token for Symbol {
         match self.value {
             '<' => format!("<symbol> &lt; </symbol>"),
             '>' => format!("<symbol> &gt; </symbol>"),
+            '&' => format!("<symbol> &amp; </symbol>"),
             c => format!("<symbol> {} </symbol>", c),
         }
     }
