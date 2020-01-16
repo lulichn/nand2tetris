@@ -6,6 +6,8 @@ use std::path::{Path, PathBuf};
 use crate::token::Token;
 
 pub mod token;
+pub mod parser;
+
 pub struct Config {
     input: String,
 }
