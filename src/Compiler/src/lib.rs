@@ -3,7 +3,9 @@ use std::ffi::OsStr;
 use std::fs::{DirEntry, File};
 use std::io::{BufReader, BufWriter, Read, Write};
 use std::path::{Path, PathBuf};
+
 use crate::token::Token;
+use crate::parser::Parser;
 
 pub mod token;
 pub mod parser;
@@ -31,14 +33,16 @@ pub fn run(config: Config) -> Result<(), Box<dyn Error>> {
         for file in files {
             let tokens = read_file(&file)?;
             let file_name = file.file_stem().unwrap().to_str().unwrap().to_string();
-            write_tokens(format!("{}T", file_name), tokens)?;
+            write_tokens(format!("{}T", file_name), &tokens)?;
         }
     } else {
         let tokens = read_file(in_path)?;
         let file_name = in_path.file_stem().unwrap().to_str().unwrap().to_string();
-        write_tokens(format!("{}T", file_name), tokens)?;
-    }
+        write_tokens(format!("{}T", file_name), &tokens)?;
 
+        let mut parser = Parser::new(&tokens);
+        parser.parse();
+    }
 
     Ok(())
 }
@@ -66,7 +70,7 @@ fn read_file(path: &Path) -> Result<Vec<Box<dyn Token>>, Box<dyn Error>> {
     Ok(tokens)
 }
 
-fn write_tokens(file_name: String, tokens: Vec<Box<dyn Token>>) -> Result<(), Box<dyn Error>> {
+fn write_tokens(file_name: String, tokens: &Vec<Box<dyn Token>>) -> Result<(), Box<dyn Error>> {
     let path = Path::new(&file_name).with_extension("xml");
     let out_file = File::create(path)?;
     let mut writer = BufWriter::new(out_file);

@@ -200,13 +200,24 @@ impl Stack {
     }
 }
 
+/**
+ *
+ */
 pub trait Token {
     fn xml_node(&self) -> String;
+    fn box_clone(&self) -> Box<dyn Token>;
+}
+
+impl Clone for Box<dyn Token>  {
+    fn clone(&self) -> Box<dyn Token> {
+        self.box_clone()
+    }
 }
 
 /**
  *
  */
+#[derive(Clone)]
 pub struct Keyword {
     value: String
 }
@@ -214,11 +225,16 @@ impl Token for Keyword {
     fn xml_node(&self) -> String {
         format!("<keyword> {} </keyword>", self.value)
     }
+
+    fn box_clone(&self) -> Box<dyn Token> {
+        Box::new((*self).clone())
+    }
 }
 
 /**
  *
  */
+#[derive(Clone)]
 pub struct Identifier {
     value: String
 }
@@ -226,11 +242,16 @@ impl Token for Identifier {
     fn xml_node(&self) -> String {
         format!("<identifier> {} </identifier>", self.value)
     }
+
+    fn box_clone(&self) -> Box<dyn Token> {
+        Box::new((*self).clone())
+    }
 }
 
 /**
  *
  */
+#[derive(Clone)]
 pub struct StringConstant {
     value: String
 }
@@ -238,11 +259,16 @@ impl Token for StringConstant {
     fn xml_node(&self) -> String {
         format!("<stringConstant> {} </stringConstant>", self.value)
     }
+
+    fn box_clone(&self) -> Box<dyn Token> {
+        Box::new((*self).clone())
+    }
 }
 
 /**
  *
  */
+#[derive(Clone)]
 pub struct IntegerConstant {
     value: i32
 }
@@ -250,11 +276,16 @@ impl Token for IntegerConstant {
     fn xml_node(&self) -> String {
         format!("<integerConstant> {} </integerConstant>", self.value)
     }
+
+    fn box_clone(&self) -> Box<dyn Token> {
+        Box::new((*self).clone())
+    }
 }
 
 /**
  *
  */
+#[derive(Clone)]
 pub struct Symbol {
     value: char
 }
@@ -266,5 +297,9 @@ impl Token for Symbol {
             '&' => format!("<symbol> &amp; </symbol>"),
             c => format!("<symbol> {} </symbol>", c),
         }
+    }
+
+    fn box_clone(&self) -> Box<dyn Token> {
+        Box::new((*self).clone())
     }
 }
