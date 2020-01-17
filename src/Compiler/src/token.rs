@@ -203,7 +203,7 @@ impl Stack {
 /**
  *
  */
-#[derive(Clone)]
+#[derive(Clone,PartialOrd, PartialEq, Debug)]
 pub enum Tokens {
     Keyword(String),
     Identifier(String),

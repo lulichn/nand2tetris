@@ -41,7 +41,8 @@ pub fn run(config: Config) -> Result<(), Box<dyn Error>> {
         write_tokens(format!("{}T", file_name), &tokens)?;
 
         let mut parser = Parser::new(&tokens);
-        parser.parse();
+        let strings = parser.parse();
+        write_strings(format!("{}my", file_name), &strings)?;
     }
 
     Ok(())
@@ -83,6 +84,18 @@ fn write_tokens(file_name: String, tokens: &Vec<Tokens>) -> Result<(), Box<dyn E
     }
 
     writer.write(format!("</tokens>\n").as_bytes()).unwrap();
+
+    Ok(())
+}
+
+fn write_strings(file_name: String, strings: &Vec<String>) -> Result<(), Box<dyn Error>> {
+    let path = Path::new(&file_name).with_extension("xml");
+    let out_file = File::create(path)?;
+    let mut writer = BufWriter::new(out_file);
+
+    for s in strings {
+        writer.write(format!("{}\n", s).as_bytes()).unwrap();
+    }
 
     Ok(())
 }
