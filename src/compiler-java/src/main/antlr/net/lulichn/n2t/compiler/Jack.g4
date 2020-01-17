@@ -54,15 +54,15 @@ varDec
     ;
 
 className
-    : ID
+    : identifier
     ;
 
 subroutineName
-    : ID
+    : identifier
     ;
 
 varName
-    : ID
+    : identifier
     ;
 
 statements
@@ -136,7 +136,9 @@ stringConstant
     : STRING
     ;
 
-
+identifier
+    : ID
+    ;
 op
     : '+' | '-' | '*' | '/' | '&' | '|' | '<' | '>' | '='
     ;

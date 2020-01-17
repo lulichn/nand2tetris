@@ -2,48 +2,51 @@ package net.lulichn.n2t.compiler;
 
 import org.antlr.v4.runtime.CharStreams;
 import org.antlr.v4.runtime.CommonTokenStream;
-import org.antlr.v4.runtime.Parser;
-import org.antlr.v4.runtime.tree.*;
+import org.w3c.dom.Node;
 
-import java.io.IOException;
+import javax.xml.parsers.ParserConfigurationException;
+import javax.xml.transform.OutputKeys;
+import javax.xml.transform.Transformer;
+import javax.xml.transform.TransformerException;
+import javax.xml.transform.TransformerFactory;
+import javax.xml.transform.dom.DOMSource;
+import javax.xml.transform.stream.StreamResult;
+import java.io.*;
+import java.nio.file.Paths;
 
 public class Main {
-  public static void main(String[] args) throws IOException {
-    var lexer = new JackLexer(CharStreams.fromFileName(args[0]));
+  public static void main(String[] args) throws IOException, ParserConfigurationException, TransformerException {
+    var path = Paths.get(args[0]);
+
+    var lexer = new JackLexer(CharStreams.fromPath(path));
     var stream = new CommonTokenStream(lexer);
     var parser = new JackParser(stream);
 
-    new P().visit(parser.klass());
+    var node = ToXml.klass(parser.klass());
 
-    var walker = new ParseTreeWalker();
-    var listener = new JackListenerImpl();
-    walker.walk(listener, parser.klass());
-
-    for (var s: listener.test()) {
-      System.out.println(s);
-    }
+    var name = getNameWithoutExtension(args[0]);
+    var os = new FileOutputStream(new File(name + ".xml"));
+    createXMLString(node, os);
   }
 
-  public static class P implements ParseTreeVisitor<String> {
-
-    @Override
-    public String visit(ParseTree tree) {
-      return null;
+  public static String getNameWithoutExtension(String fileName) {
+    int index = fileName.lastIndexOf('.');
+    if (index!=-1) {
+      return fileName.substring(0, index);
     }
 
-    @Override
-    public String visitChildren(RuleNode node) {
-      return null;
-    }
+    return "";
+  }
 
-    @Override
-    public String visitTerminal(TerminalNode node) {
-      return null;
-    }
+  public static void createXMLString(Node document, OutputStream os) throws TransformerException {
+    StringWriter writer = new StringWriter();
+    TransformerFactory factory = TransformerFactory.newInstance();
+    Transformer transformer = factory.newTransformer();
 
-    @Override
-    public String visitErrorNode(ErrorNode node) {
-      return null;
-    }
+    transformer.setOutputProperty(OutputKeys.INDENT, "yes");
+    transformer.setOutputProperty(OutputKeys.METHOD, "html");
+    transformer.setOutputProperty("{http://xml.apache.org/xalan}indent-amount", "2");
+
+    transformer.transform(new DOMSource(document), new StreamResult(os));
   }
 }
