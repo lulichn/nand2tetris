@@ -95,7 +95,7 @@ impl TokenHolder {
 
     fn next_is_unary_op(&self) -> bool {
         self.compare(vec![Tokens::Symbol('-')]) ||
-            self.compare(vec![Tokens::Symbol('+')])
+            self.compare(vec![Tokens::Symbol('~')])
     }
 
     fn next_is_subroutine_call(&self) -> bool {
@@ -148,8 +148,6 @@ impl Parser {
     //     subroutineDec*
     //     '}'
     fn compile_class(&mut self) -> Vec<String> {
-        println!("======== begin compile_class ========");
-
         let mut vec: Vec<String> = Vec::new();
         vec.push(String::from("<class>"));
 
@@ -170,8 +168,6 @@ impl Parser {
         vec.push(self.tokens.next().unwrap().xml_node());
 
         vec.push(String::from("</class>"));
-
-        println!("======== end compile_class ========");
 
         vec
     }
@@ -278,7 +274,6 @@ impl Parser {
     //     statements
     //     '}'
     fn compile_subroutine_body(&mut self) -> Vec<String> {
-        println!("======== begin compile_subroutine_body ========");
         let mut vec: Vec<String> = Vec::new();
 
         vec.push(String::from("<subroutineBody>"));
@@ -296,8 +291,6 @@ impl Parser {
 
         vec.push(String::from("</subroutineBody>"));
 
-        println!("======== end compile_subroutine_body ========");
-
         vec
     }
 
@@ -308,7 +301,6 @@ impl Parser {
     //     (',' varName)*
     //     ';'
     fn compile_var_dec(&mut self) -> Vec<String> {
-        println!("======== begin compile_var_dev ========");
         let mut vec: Vec<String> = Vec::new();
 
         vec.push(String::from("<varDec>"));
@@ -337,8 +329,6 @@ impl Parser {
 
         vec.push(String::from("</varDec>"));
 
-        println!("======== end compile_var_dev ========");
-
         vec
     }
 
@@ -346,7 +336,6 @@ impl Parser {
     //     statement*
 
     fn compile_statements(&mut self) -> Vec<String> {
-        println!("======== begin compile_statements ========");
         let mut vec: Vec<String> = Vec::new();
 
         vec.push(String::from("<statements>"));
@@ -380,7 +369,6 @@ impl Parser {
 
         vec.push(String::from("</statements>"));
 
-        println!("======== end compile_statements ========");
         vec
     }
 
@@ -392,7 +380,6 @@ impl Parser {
     //     expression
     //     ';'
     fn compile_let_statement(&mut self) -> Vec<String> {
-        println!("======== begin compile_let_statement ========");
         let mut vec: Vec<String> = Vec::new();
 
         vec.push(String::from("<letStatement>"));
@@ -410,8 +397,7 @@ impl Parser {
         vec.push(self.tokens.next().unwrap().xml_node());  // ;
 
         vec.push(String::from("</letStatement>"));
-        println!("======== end compile_let_statement ========");
-        
+
         vec
     }
 
@@ -430,9 +416,8 @@ impl Parser {
     //         '}'
     //      )?
     fn compile_if_statement(&mut self) -> Vec<String> {
-        println!("======== begin compile_if_statement ========");
-
         let mut vec: Vec<String> = Vec::new();
+
         vec.push(String::from("<ifStatement>"));
         vec.push(self.tokens.next().unwrap().xml_node());
         vec.push(self.tokens.next().unwrap().xml_node());
@@ -453,8 +438,6 @@ impl Parser {
 
         vec.push(String::from("</ifStatement>"));
 
-        println!("======== end compile_if_statement ========");
-        
         vec
     }
 
@@ -658,9 +641,7 @@ impl Parser {
         let mut vec: Vec<String> = Vec::new();
         vec.push(String::from("<expressionList>"));
 
-
-        // loop
-        vec.append(&mut self.compile_expression());
+        vec.append(&mut self.compile_expression());  // expression
 
         while self.tokens.compare(vec![Tokens::Symbol(',')]) {
             vec.push(self.tokens.next().unwrap().xml_node()); // ,
@@ -672,14 +653,3 @@ impl Parser {
         vec
     }
 }
-
-
-// className
-//    identifier
-
-// varName
-//    identifier
-
-// subroutineName
-//    identifier
-
