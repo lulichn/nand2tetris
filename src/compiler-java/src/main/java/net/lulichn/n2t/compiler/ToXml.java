@@ -81,9 +81,13 @@ public class ToXml {
         tree instanceof JackParser.StatementContext ||
         tree instanceof JackParser.OpContext ||
         tree instanceof JackParser.UnaryOpContext ||
+        tree instanceof JackParser.KeywordConstantContext ||
         // tests
+        tree instanceof JackParser.ElseClauseContext ||
         tree instanceof JackParser.ArrayIndexingContext ||
+        tree instanceof JackParser.VarTypeContext ||
         tree instanceof JackParser.VarListContext ||
+        tree instanceof JackParser.TypedVarContext ||
         tree instanceof JackParser.SubroutineCallContext) {
       return list;
     }
@@ -91,6 +95,8 @@ public class ToXml {
     String containerName = "";
     if (tree instanceof JackParser.VarDecContext) {
       containerName = "varDec";
+    } else if (tree instanceof JackParser.ClassVarDecContext) {
+      containerName = "classVarDec";
     } else if (tree instanceof JackParser.LetStatementContext) {
       containerName = "letStatement";
     } else if (tree instanceof JackParser.IfStatementContext) {

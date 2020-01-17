@@ -17,16 +17,38 @@ import java.nio.file.Paths;
 public class Main {
   public static void main(String[] args) throws IOException, ParserConfigurationException, TransformerException {
     var path = Paths.get(args[0]);
+    var inFile = path.toFile();
 
-    var lexer = new JackLexer(CharStreams.fromPath(path));
-    var stream = new CommonTokenStream(lexer);
-    var parser = new JackParser(stream);
+    if (inFile.isFile()) {
+      compile(inFile);
+    } else if (inFile.isDirectory()) {
+      compileDir(inFile);
+    }
+  }
 
-    var node = ToXml.klass(parser.klass());
+  public static void compileDir(File directory) throws IOException, ParserConfigurationException, TransformerException {
+    var children = directory.listFiles((dir, name) -> name.toLowerCase().endsWith(".jack"));
+    for (var file: children) {
+      compile(file);
+    }
+  }
 
-    var name = getNameWithoutExtension(args[0]);
-    var os = new FileOutputStream(new File(name + ".xml"));
-    createXMLString(node, os);
+  public static void compile(File file) throws IOException, ParserConfigurationException, TransformerException {
+    Node node;
+
+    try (var is = new FileInputStream(file)) {
+      var lexer = new JackLexer(CharStreams.fromStream(is));
+      var stream = new CommonTokenStream(lexer);
+      var parser = new JackParser(stream);
+      node = ToXml.klass(parser.klass());
+    }
+
+
+    var name = getNameWithoutExtension(file.getCanonicalPath());
+
+    try (var os = new FileOutputStream(new File(name + ".xml"))) {
+      outputXml(node, os);
+    }
   }
 
   public static String getNameWithoutExtension(String fileName) {
@@ -35,11 +57,10 @@ public class Main {
       return fileName.substring(0, index);
     }
 
-    return "";
+    return fileName;
   }
 
-  public static void createXMLString(Node document, OutputStream os) throws TransformerException {
-    StringWriter writer = new StringWriter();
+  public static void outputXml(Node document, OutputStream os) throws TransformerException {
     TransformerFactory factory = TransformerFactory.newInstance();
     Transformer transformer = factory.newTransformer();
 
