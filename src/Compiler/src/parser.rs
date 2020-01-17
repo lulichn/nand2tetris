@@ -1,5 +1,4 @@
 use crate::token::{Tokens};
-use std::any::Any;
 
 pub struct Parser {
     tokens: TokenHolder
@@ -25,18 +24,14 @@ impl TokenHolder {
         }
     }
 
-    fn back(&mut self) -> usize {
-        self.now -= 1;
-        self.now
+    fn compare(&self, to: Vec<Tokens>) -> bool {
+        self.compare_pos(to, 0)
     }
 
-    fn compare(&self, to: Vec<Tokens>) -> bool {
+    fn compare_pos(&self, to: Vec<Tokens>, pos: usize) -> bool {
         for idx in 0..=to.len() - 1 {
-            let from = self.tokens[self.now + idx].clone();
+            let from = self.tokens[self.now + idx + pos].clone();
             let toi = to.get(idx).unwrap().clone();
-            let a = from.xml_node();
-            let b = toi.xml_node();
-            println!("{}, {}", a, b);
 
             match (from, toi) {
                 (Tokens::Keyword(ref v1), Tokens::Keyword(ref v2)) => {
@@ -61,6 +56,14 @@ impl TokenHolder {
         }
 
         true
+    }
+
+    fn next_is_type(&self) -> bool {
+        // type
+        self.compare(vec![Tokens::Keyword(String::from("int"))]) ||
+            self.compare(vec![Tokens::Keyword(String::from("char"))]) ||
+            self.compare(vec![Tokens::Keyword(String::from("boolean"))]) ||
+            self.compare(vec![Tokens::Identifier(String::default())])
     }
 
     fn next_is_constant(&self) -> bool {
@@ -97,34 +100,15 @@ impl TokenHolder {
 
     fn next_is_subroutine_call(&self) -> bool {
         self.compare(vec![Tokens::Identifier(String::new()), Tokens::Symbol('.')])
-//        match Some(self.tokens[self.now].clone()) {
-//            Some(Tokens::Identifier(_)) => {
-//                match Some(self.tokens[self.now + 1].clone()) {
-//                    Some(Tokens::Symbol(c)) if c == '.' => true,
-//                    _ => false,
-//                }
-//            },
-//            _ => false,
-//        }
     }
 
     fn next_is_var_dec(&self) -> bool {
         self.compare(vec![Tokens::Keyword(String::from("var"))])
-
-//        match Some(self.tokens[self.now].clone()) {
-//            Some(Tokens::Keyword(ref v)) if v.as_str() == "var" => true,
-//            _ => false,
-//        }
     }
 
     fn next_is_class_var_dec(&self) -> bool {
         self.compare(vec![Tokens::Keyword(String::from("static"))]) ||
             self.compare(vec![Tokens::Keyword(String::from("field"))])
-
-//        match Some(self.tokens[self.now].clone()) {
-//            Some(Tokens::Keyword(ref v)) if v.as_str() == "static" || v.as_str() == "field" => true,
-//            _ => false,
-//        }
     }
 
     fn next_is_let_statement(&self) -> bool { self.next_is_statement("let") }
@@ -135,20 +119,12 @@ impl TokenHolder {
 
     fn next_is_statement(&self, keyword: &str) -> bool {
         self.compare(vec![Tokens::Keyword(String::from(keyword))])
-//        match Some(self.tokens[self.now].clone()) {
-//            Some(Tokens::Keyword(ref v)) if v.as_str() == keyword => true,
-//            _ => false,
-//        }
     }
 
     fn next_is_subroutine_dec(&self) -> bool {
         self.compare(vec![Tokens::Keyword(String::from("constructor"))]) ||
             self.compare(vec![Tokens::Keyword(String::from("function"))]) ||
             self.compare(vec![Tokens::Keyword(String::from("method"))])
-//        match Some(self.tokens[self.now].clone()) {
-//            Some(Tokens::Keyword(ref v)) if v.as_str() == "constructor" || v.as_str() == "function" || v.as_str() == "method" => true,
-//            _ => false,
-//        }
     }
 }
 
@@ -207,8 +183,8 @@ impl Parser {
     //     (',' varName)*
     //     ';'
     fn compile_class_var_dec(&mut self) -> Vec<String> {
-        println!("======== begin compile_class_var_dec ========");
         let mut vec: Vec<String> = Vec::new();
+        vec.push(String::from("<classVarDec>"));
 
         vec.push(self.tokens.next().unwrap().xml_node());
 
@@ -234,7 +210,8 @@ impl Parser {
             }
         }
 
-        println!("======== end compile_class_var_dec ========");
+        vec.push(String::from("</classVarDec>"));
+
         vec
     }
 
@@ -247,29 +224,25 @@ impl Parser {
     //     ')'
     //     subroutineBody
     fn compile_subroutine_dec(&mut self) -> Vec<String> {
-        println!("======== begin compile_subroutine_dec ========");
-
         let mut vec: Vec<String> = Vec::new();
 
         vec.push(String::from("<subroutineDec>"));
 
-        vec.push(self.tokens.next().unwrap().xml_node());
+        vec.push(self.tokens.next().unwrap().xml_node()); // ('constructor' | 'function' | 'method')
 
-        vec.push(self.tokens.next().unwrap().xml_node());
+        vec.push(self.tokens.next().unwrap().xml_node()); // ('void' | type)
 
-        vec.push(self.tokens.next().unwrap().xml_node());
+        vec.push(self.tokens.next().unwrap().xml_node()); // subroutineName
 
-        vec.push(self.tokens.next().unwrap().xml_node());
+        vec.push(self.tokens.next().unwrap().xml_node());  // (
 
-        vec.append(&mut self.compile_parameter_list());
+        vec.append(&mut self.compile_parameter_list());   // parameterList
 
-        vec.push(self.tokens.next().unwrap().xml_node());
+        vec.push(self.tokens.next().unwrap().xml_node()); // )
 
-        vec.append(&mut self.compile_subroutine_body());
+        vec.append(&mut self.compile_subroutine_body());  // subroutineBody
 
         vec.push(String::from("</subroutineDec>"));
-
-        println!("======== end compile_subroutine_dec ========");
 
         vec
     }
@@ -280,14 +253,22 @@ impl Parser {
     //         (',' type varName)*
     //     )?
     fn compile_parameter_list(&mut self) -> Vec<String> {
-        println!("======== begin compile_parameter_list ========");
         let mut vec: Vec<String> = Vec::new();
 
         vec.push(String::from("<parameterList>"));
 
-        vec.push(String::from("</parameterList>"));
+        if self.tokens.next_is_type() && self.tokens.compare_pos(vec![Tokens::Identifier(String::default())], 1) {
+            vec.push(self.tokens.next().unwrap().xml_node()); // type
+            vec.push(self.tokens.next().unwrap().xml_node()); // varName
 
-        println!("======== end compile_parameter_list ========");
+            while self.tokens.compare(vec![Tokens::Symbol(',')]) {
+                vec.push(self.tokens.next().unwrap().xml_node()); // ,
+                vec.push(self.tokens.next().unwrap().xml_node()); // type
+                vec.push(self.tokens.next().unwrap().xml_node()); // varName
+            }
+        }
+
+        vec.push(String::from("</parameterList>"));
         vec
     }
 
@@ -620,6 +601,7 @@ impl Parser {
         if self.tokens.next_is_unary_op() {
             vec.push(self.tokens.next().unwrap().xml_node()); // unaryOp
             vec.append(&mut self.compile_term()); // term
+            vec.push(String::from("</term>"));
             return vec;
         }
 
@@ -694,9 +676,6 @@ impl Parser {
 
 // className
 //    identifier
-
-// type
-//   'int' | 'char' | 'boolean' | className
 
 // varName
 //    identifier

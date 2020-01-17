@@ -33,16 +33,20 @@ pub fn run(config: Config) -> Result<(), Box<dyn Error>> {
         for file in files {
             let tokens = read_file(&file)?;
             let file_name = file.file_stem().unwrap().to_str().unwrap().to_string();
-            write_tokens(format!("{}T", file_name), &tokens)?;
+            write_tokens(format!("My{}T", file_name), &tokens)?;
+
+            let mut parser = Parser::new(&tokens);
+            let strings = parser.parse();
+            write_strings(format!("My{}", file_name), &strings)?;
         }
     } else {
         let tokens = read_file(in_path)?;
         let file_name = in_path.file_stem().unwrap().to_str().unwrap().to_string();
-        write_tokens(format!("{}T", file_name), &tokens)?;
+        write_tokens(format!("My{}T", file_name), &tokens)?;
 
         let mut parser = Parser::new(&tokens);
         let strings = parser.parse();
-        write_strings(format!("{}my", file_name), &strings)?;
+        write_strings(format!("My{}", file_name), &strings)?;
     }
 
     Ok(())
