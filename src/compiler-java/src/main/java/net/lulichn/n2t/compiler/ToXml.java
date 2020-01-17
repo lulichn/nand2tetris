@@ -1,5 +1,6 @@
 package net.lulichn.n2t.compiler;
 
+import org.antlr.v4.runtime.ParserRuleContext;
 import org.antlr.v4.runtime.tree.ParseTree;
 import org.antlr.v4.runtime.tree.TerminalNodeImpl;
 import org.w3c.dom.Document;
@@ -7,21 +8,51 @@ import org.w3c.dom.Node;
 
 import javax.xml.parsers.DocumentBuilderFactory;
 import javax.xml.parsers.ParserConfigurationException;
-import javax.xml.transform.OutputKeys;
-import javax.xml.transform.Transformer;
-import javax.xml.transform.TransformerException;
-import javax.xml.transform.TransformerFactory;
-import javax.xml.transform.dom.DOMSource;
-import javax.xml.transform.stream.StreamResult;
-import java.io.OutputStream;
-import java.io.StringWriter;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 
+import static net.lulichn.n2t.compiler.JackParser.*;
+
 public class ToXml {
   static final List<String> keywords = Arrays.asList("class", "constructor", "function", "method", "field", "static", "var", "int", "char", "boolean", "void", "true", "false", "null", "this", "let", "do", "if", "else",
       "while", "return");
+
+  static final List<Integer> parents = Arrays.asList(
+      RULE_varDec,
+      RULE_classVarDec,
+      RULE_letStatement,
+      RULE_ifStatement,
+      RULE_whileStatement,
+      RULE_doStatement,
+      RULE_returnStatement,
+      RULE_term,
+      RULE_expression,
+      RULE_statements,
+      RULE_subroutineDec,
+      RULE_subroutineBody,
+      RULE_klass,
+      RULE_parameterList,
+      RULE_expressionList);
+
+  static final List<Integer> temporary = Arrays.asList(
+      RULE_varType,
+      RULE_varList,
+      RULE_type,
+      RULE_subroutineKind,
+      RULE_returnType,
+      RULE_typedVar,
+      RULE_className,
+      RULE_subroutineName,
+      RULE_varName,
+      RULE_statement,
+      RULE_arrayIndexing,
+      RULE_elseClause,
+      RULE_subroutineCall,
+      RULE_qualifier,
+      RULE_op,
+      RULE_unaryOp,
+      RULE_keywordConstant);
 
   private final Document doc;
 
@@ -29,7 +60,7 @@ public class ToXml {
     this.doc = doc;
   }
 
-  public static Node klass(ParseTree klass) throws ParserConfigurationException {
+  public static Node klass(JackParser.KlassContext klass) throws ParserConfigurationException {
     var doc = createXMLDocument("root");
     var toXml = new ToXml(doc);
     var xml = new ToXml(doc).make(klass);
@@ -71,62 +102,21 @@ public class ToXml {
       list.addAll(make(tree.getChild(id)));
     }
 
-    if (tree instanceof JackParser.ClassNameContext ||
-        tree instanceof JackParser.SubroutineKindContext ||
-        tree instanceof JackParser.ReturnTypeContext ||
-        tree instanceof JackParser.SubroutineNameContext ||
-        tree instanceof JackParser.TypeContext ||
-        tree instanceof JackParser.VarNameContext ||
-        tree instanceof JackParser.QualifierContext ||
-        tree instanceof JackParser.StatementContext ||
-        tree instanceof JackParser.OpContext ||
-        tree instanceof JackParser.UnaryOpContext ||
-        tree instanceof JackParser.KeywordConstantContext ||
-        // tests
-        tree instanceof JackParser.ElseClauseContext ||
-        tree instanceof JackParser.ArrayIndexingContext ||
-        tree instanceof JackParser.VarTypeContext ||
-        tree instanceof JackParser.VarListContext ||
-        tree instanceof JackParser.TypedVarContext ||
-        tree instanceof JackParser.SubroutineCallContext) {
+    var ruleIndex = ((ParserRuleContext) tree).getRuleIndex();
+
+    // temp. not parent
+    if (temporary.contains(ruleIndex)) {
       return list;
     }
 
-    String containerName = "";
-    if (tree instanceof JackParser.VarDecContext) {
-      containerName = "varDec";
-    } else if (tree instanceof JackParser.ClassVarDecContext) {
-      containerName = "classVarDec";
-    } else if (tree instanceof JackParser.LetStatementContext) {
-      containerName = "letStatement";
-    } else if (tree instanceof JackParser.IfStatementContext) {
-      containerName = "ifStatement";
-    } else if (tree instanceof JackParser.WhileStatementContext) {
-      containerName = "whileStatement";
-    } else if (tree instanceof JackParser.DoStatementContext) {
-      containerName = "doStatement";
-    } else if (tree instanceof JackParser.ReturnStatementContext) {
-      containerName = "returnStatement";
-    } else if (tree instanceof JackParser.TermContext) {
-      containerName = "term";
-    } else if (tree instanceof JackParser.ExpressionContext) {
-      containerName = "expression";
-    } else if (tree instanceof JackParser.StatementsContext) {
-      containerName = "statements";
-    } else if (tree instanceof JackParser.SubroutineDecContext) {
-      containerName = "subroutineDec";
-    } else if (tree instanceof JackParser.SubroutineBodyContext) {
-      containerName = "subroutineBody";
-    } else if (tree instanceof JackParser.KlassContext) {
+    // container? parent
+    String containerName;
+    if (ruleIndex == RULE_klass) {
       containerName = "class";
-    }
-    //
-//      else if (tree instanceof JackParser.VarListContext) {
-//        containerName = "varList";
-    else if (tree instanceof JackParser.ParameterListContext) {
-      containerName = "parameterList";
-    } else if (tree instanceof JackParser.ExpressionListContext) {
-      containerName = "expressionList";
+    } else if (parents.contains(ruleIndex)) {
+      containerName = ruleNames[ruleIndex];
+    } else {
+      throw new IllegalArgumentException(tree.getText());
     }
 
     var parent = doc.createElement(containerName);
